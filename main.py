@@ -244,8 +244,8 @@ W_L = 0.05
 
 MAX_TREE_NODES_PENALTY = 100
 
-PROB_CRUZAR = 0.8
-PROB_MUTAR = 0.4
+PROB_CROSS = 0.7
+PROB_MUTATE = 0.3
 MEAN_SYN_ATTR = 4
 STD_SYN_ATTR = 2
 
@@ -366,11 +366,11 @@ def generate_offspring(elite, n_orig_attrs, num_offspring):
         child = Individual(p1.mask[:], p1.trees[:], p1.num_syn_attr)
 
         # CROSSOVER
-        if random() < PROB_CRUZAR:
+        if random() < PROB_CROSS:
             child = crossover_hybrid(p1, p2, n_orig_attrs)
 
         # MUTATION
-        if random() < PROB_MUTAR:
+        if random() < PROB_MUTATE:
             mutate_hybrid(child, n_orig_attrs)
 
         offspring.append(child)
@@ -413,7 +413,7 @@ def mutate_hybrid(individual, n_orig_attrs):
     individual.mask[idx_mask] = 1 - individual.mask[idx_mask]
 
     # MUTATION 2: Trees (Subtree mutation, GP style)
-    if individual.num_syn_attr > 0:  # 50% probability of mutating a tree
+    if individual.num_syn_attr > 0:
         idx_tree = randint(0, individual.num_syn_attr - 1)
         # Mutation handles replacing a portion of the tree
         individual.trees[idx_tree] = mutate_tree(individual.trees[idx_tree])
