@@ -12,7 +12,7 @@ import copy
 # PG DEFINITIONS AND OPERATORS ---
 
 # Set of Functions and Terminals (For feature synthesis)
-FUNCTIONS = ['+', '-', '*', '/_prot', 'sen', 'cos', 'sqrt', 'log', 'pow2']
+FUNCTIONS = ['+', '-', '*', '/_prot', 'sqrt', 'log', 'pow2', 'tanh']
 TERMINALS = []  # Will be filled with variables (X_cols) and Constants.
 CONST_MIN, CONST_MAX = -5, 5
 
@@ -33,16 +33,18 @@ def protected_log(x):
 def power_2(x):
     return np.power(x, 2)
 
+def tanh(x):
+    return np.tanh(np.nan_to_num(x))
+
 OPERATOR_MAP = {
     '+': np.add,
     '-': np.subtract,
     '*': np.multiply,
     '/_prot': prot_div,
-    'sen': np.sin,
-    'cos': np.cos,
     'sqrt': protected_sqrt,
     'log': protected_log,
-    'pow2': power_2
+    'pow2': power_2,
+    'tanh': tanh
 }
 
 
@@ -79,7 +81,7 @@ class Node:
 
 
 class Individual:
-    """Class for a hybrid individual (GA + GP)."""
+    """Class for a hybrid individual"""
 
     def __init__(self, mask, trees, num_syn_attr):
         self.mask = mask  # GA Part: Binary mask (Feature Selection)
@@ -109,7 +111,7 @@ def create_random_tree(max_depth, functions, terminals, method='grow',
         # Select Function
         func_symbol = choice(functions)
 
-        if func_symbol in ['sen', 'cos', 'sqrt', 'log', 'pow2']:
+        if func_symbol in ['sen', 'cos', 'sqrt', 'log', 'pow2', 'tanh']:
             arity = 1
         else:
             arity = 2
@@ -181,7 +183,7 @@ def find_parent(root, target):
     return None, None
 
 
-def crossover_tree(parent1_tree: Node, parent2_tree: Node):
+def crossover_tree(parent1_tree, parent2_tree):
     """Subtree crossover: swaps a random subtree between two parents."""
 
     # Deep copy of tree 1
@@ -457,7 +459,7 @@ def run_hybrid_evolutionary_regression(csv_path):
         y_pred_base = model_base.predict(X_val)
         error_base = mean_absolute_error(y_val, y_pred_base)
 
-    print(f"Base Error (MAE) with Original X: {error_base:.4f} (e)")
+    print(f"Base Error with Original Dataset: {error_base:.4f} (e)")
 
     # POPULATION INITIALIZATION
     population = initialize_population(POPULATION_SIZE, n_original_attrs)
