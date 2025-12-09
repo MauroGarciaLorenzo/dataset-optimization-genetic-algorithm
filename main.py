@@ -13,11 +13,27 @@ import copy
 
 # Set of Functions and Terminals (For feature synthesis)
 FUNCTIONS = ['+', '-', '*', '/_prot', 'sqrt', 'log', 'pow2', 'tanh']
-TERMINALS = []  # Will be filled with variables (X_cols) and Constants.
+TERMINALS = []  # Will be filled with variables.
 CONST_MIN, CONST_MAX = -5, 5
 
+# GENETIC ALGORITHM (GA) CONFIGURATION AND FUNCTIONS ---
 
-# Operator mapping to NumPy functions, including protected ones
+POPULATION_SIZE = 200
+NUM_GENERATIONS = 100
+N_BEST_ELITE = POPULATION_SIZE // 5
+
+W_ERROR = 0.9
+W_N = 0.05
+W_L = 0.05
+
+MAX_TREE_NODES_PENALTY = 100
+
+PROB_CROSS = 0.7
+PROB_MUTATE = 0.3
+MEAN_SYN_ATTR = 4
+STD_SYN_ATTR = 2
+
+
 def prot_div(x1, x2):
     """Protected division to avoid division-by-zero errors."""
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -70,10 +86,7 @@ class Node:
         Calculates and returns the total number of nodes (functions + terminals)
         in the subtree starting at this node.
         """
-        # Start counting with the current node (1)
         length = 1
-
-        # Recursively add the length of all children (subtrees)
         for child in self.children:
             length += child.get_length()
 
@@ -94,11 +107,11 @@ class Individual:
 
 # GENETIC PROGRAMMING (GP) AUXILIARY FUNCTIONS ---
 
-def create_random_tree(max_depth, functions, terminals, method='grow',
+def create_random_tree(max_depth, functions, terminals,
                        current_depth=0):
-    """Recursively generates a random expression tree (using 'Grow' method)."""
+    """Recursively generates a random expression tree."""
 
-    # Condition to generate a Terminal (reaching max depth or randomness)
+    # Condition to generate a Terminal
     is_terminal = (current_depth >= max_depth) or (
                 random() < 0.2 and current_depth > 0)
 
@@ -121,13 +134,13 @@ def create_random_tree(max_depth, functions, terminals, method='grow',
         # Generate children recursively
         for _ in range(arity):
             node.children.append(
-                create_random_tree(max_depth, functions, terminals, method,
+                create_random_tree(max_depth, functions, terminals,
                                    current_depth + 1))
 
     return node
 
 
-def evaluate_tree(tree_node: Node, X_data: np.ndarray):
+def evaluate_tree(tree_node, X_data):
     """
     Evaluates the expression tree (tree_node) over the data matrix (X_data).
     Returns a one-column array (the new synthesized feature).
@@ -151,11 +164,10 @@ def evaluate_tree(tree_node: Node, X_data: np.ndarray):
     evaluated_children = [evaluate_tree(child, X_data) for child in
                           tree_node.children]
 
-    # Apply the NumPy function
     return func(*evaluated_children)
 
 
-def find_random_node(root: Node):
+def find_random_node(root):
     """Finds a random node in the tree."""
     nodes = []
 
@@ -212,7 +224,7 @@ def crossover_tree(parent1_tree, parent2_tree):
     return child
 
 
-def mutate_tree(tree_node: Node):
+def mutate_tree(tree_node):
     """Subtree mutation: replaces a random subtree with a new random tree."""
 
     node_to_mutate = find_random_node(tree_node)
@@ -232,24 +244,6 @@ def mutate_tree(tree_node: Node):
             tree_node = new_sub_tree
 
     return tree_node
-
-
-# GENETIC ALGORITHM (GA) CONFIGURATION AND FUNCTIONS ---
-
-POPULATION_SIZE = 200
-NUM_GENERATIONS = 100
-N_BEST_ELITE = POPULATION_SIZE // 5
-
-W_ERROR = 0.9
-W_N = 0.05
-W_L = 0.05
-
-MAX_TREE_NODES_PENALTY = 100
-
-PROB_CROSS = 0.7
-PROB_MUTATE = 0.3
-MEAN_SYN_ATTR = 4
-STD_SYN_ATTR = 2
 
 
 def initialize_population(size, n_orig_attrs):
@@ -515,4 +509,5 @@ def run_hybrid_evolutionary_regression(csv_path):
     return final_best
 
 if __name__ == "__main__":
+    # Usage: python main.py ${PATH_TO_CSV}
     run_hybrid_evolutionary_regression(sys.argv[1])
